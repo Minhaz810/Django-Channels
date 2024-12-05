@@ -3,15 +3,19 @@
 from channels.consumer import SyncConsumer,AsyncConsumer
 from channels.exceptions import StopConsumer
 from asgiref.sync import async_to_sync
+from.models import Group,Chat
+import json
+
 
 class MySyncConsumer(SyncConsumer):
     def websocket_connect(self,event):
         print("Websocket Connected...")
-        print("Channel Layer...",self.channel_layer)
-        print("Channel Name",self.channel_name)
+        self.group_name = self.scope['url_route']['kwargs']['room_name']
 
-        #add a channel to a existing group
-        async_to_sync(self.channel_layer.group_add)("Friends",self.channel_name)
+        async_to_sync(self.channel_layer.group_add)(
+            self.group_name
+            ,self.channel_name
+            )
         self.send(
             {
                 'type':'websocket.accept'
@@ -20,7 +24,11 @@ class MySyncConsumer(SyncConsumer):
     
     def websocket_receive(self,event):
         print("Message Receive From Client...",event['text'])
-        async_to_sync(self.channel_layer.group_send)("Friends",{
+        data = json.loads(event['text'])
+        group = Group.objects.get(name = self.group_name)
+        Chat.objects.create(content = data['message'],group = group)
+    
+        async_to_sync(self.channel_layer.group_send)(self.group_name,{
             'type':'chat.message',
             'message':event['text']
         })

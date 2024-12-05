@@ -19,7 +19,7 @@
 
       ws.onmessage = function (event) {
         const data = JSON.parse(event.data);
-        document.getElementById("chat-log").value += data.msg + "\n";
+        document.getElementById("chat-log").value +=">>>" data.msg + "\n";
       };
 
       ws.onclose = function () {
